@@ -56,7 +56,13 @@ const Page = async ({ params }: PageProps) => {
   const chatPartnerId = user.id === userId1 ? userId2 : userId1;
   // Just a note for remembering -> we use fetchRedis for when there's weird caching
   // and we can just use normal "db" for any other db related calls
-  const chatPartner = (await db.get(`user:${chatPartnerId}`)) as User;
+  //const chatPartner = (await db.get(`user:${chatPartnerId}`)) as User;
+  const chatPartnerRaw = (await fetchRedis(
+    "get",
+    `user:${chatPartnerId}`
+  )) as string;
+  const chatPartner = JSON.parse(chatPartnerRaw);
+
   const initialMessages = await getChatMessages(chatId);
 
   return (
