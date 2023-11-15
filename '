@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import Image from "next/image";
 import { FC, useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
-import { Heart, Plus } from "lucide-react";
+import { Heart } from "lucide-react";
 
 interface MessagesProps {
   initialMessages: Message[];
@@ -33,14 +33,6 @@ const Messages: FC<MessagesProps> = ({
   };
 
   const likeMessage = async (timestamp: number) => {
-    const messageToLikeIndex = messages.findIndex(
-      (message) => message.timestamp === timestamp
-    );
-    const updatedMessages = [...messages];
-    updatedMessages[messageToLikeIndex].isLiked =
-      !updatedMessages[messageToLikeIndex].isLiked;
-    setMessages(updatedMessages);
-
     try {
       await axios.put("/api/message/like", { timestamp, chatId });
     } catch (error) {
@@ -94,41 +86,24 @@ const Messages: FC<MessagesProps> = ({
               })}
             >
               <div
+                onDoubleClick={() => {
+                  likeMessage(message.timestamp);
+                }}
                 className={cn(
-                  "flex flex-col space-y-2 text-base group max-w-xs mx-2 relative",
+                  "flex flex-col space-y-2 text-base max-w-xs mx-2 relative",
                   {
                     "order-1 items-end": isCurrentUser,
                     "order-2 items-start": !isCurrentUser,
                   }
                 )}
               >
-                <div
-                  className={cn(
-                    "like-button hidden h-7 w-7 justify-center items-center absolute rounded-full outline outline-2 bg-indigo-100 outline-indigo-500 p-1.5 bottom-[-0.75rem]",
-                    {
-                      flex: message.isLiked,
-                      "right-[-0.75rem] hover:cursor-pointer group-hover:flex ":
-                        !isCurrentUser,
-                      "left-[-0.75rem]": isCurrentUser,
-                    }
-                  )}
-                  onClick={() => {
-                    !isCurrentUser && likeMessage(message.timestamp);
-                  }}
-                >
+                <div className="like-button h-7 w-7 flex justify-center items-center absolute rounded-full bg-indigo-100 p-1.5 bottom-[-0.75rem] left-[-0.75rem]">
                   {message.isLiked ? (
                     <Heart
-                      className={cn(
-                        "like-heart h-4 w-4 text-indigo-500 fill-indigo-500"
-                      )}
+                      className="h-4 w-4 text-indigo-500 fill-indigo-500"
                       fill="true"
                     />
-                  ) : (
-                    <Heart
-                      className={cn("h-4 w-4 text-indigo-500 fill-transparent")}
-                      fill="true"
-                    />
-                  )}
+                  ) : null}
                 </div>
                 <span
                   className={cn("px-4 py-2 rounded-lg inline-block", {

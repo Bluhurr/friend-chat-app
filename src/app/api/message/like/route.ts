@@ -3,23 +3,25 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { pusherServer } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";
-import { messageValidator } from "@/lib/validations/message";
-import { nanoid } from "nanoid";
 import { getServerSession } from "next-auth";
 
-export async function POST(req: Request) {
+export async function PUT(req: Request) {
   try {
-    const { text, chatId }: { text: string; chatId: string } = await req.json();
+    const { timestamp, chatId }: { timestamp: number; chatId: string } =
+      await req.json();
     const session = await getServerSession(authOptions);
+
     if (!session) {
       return new Response("Unauthorized", { status: 401 });
     }
 
+    // Make sure user is actually part of this chat
     const [userId1, userId2] = chatId.split("--");
     if (session.user.id !== userId1 && session.user.id !== userId2) {
       return new Response("Unauthorized", { status: 401 });
     }
 
+    // Make sure user is friends with chat partner
     const friendId = session.user.id === userId1 ? userId2 : userId1;
     const friendList = (await fetchRedis(
       "smembers",
@@ -30,36 +32,32 @@ export async function POST(req: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const sender = (await fetchRedis(
-      "get",
-      `user:${session.user.id}`
-    )) as string;
-    const parsedSender = JSON.parse(sender) as User;
-
-    const timestamp = Date.now();
-
-    const messageData: Message = {
-      id: nanoid(),
-      senderId: session.user.id,
-      text,
-      timestamp,
-      isLiked: false,
-    };
-
-    const message = messageValidator.parse(messageData);
-
-    // All valid - send message
-    pusherServer.trigger(
-      toPusherKey(`chat:${chatId}`),
-      "incoming-message",
-      message
+    const messages: Message[] = await db.zrange(
+      `chat:${chatId}:messages`,
+      0,
+      -1,
+      {
+        rev: true,
+      }
     );
 
-    pusherServer.trigger(toPusherKey(`user:${friendId}:chats`), "new_message", {
-      ...message,
-      senderImg: parsedSender.image,
-      senderName: parsedSender.name,
-    });
+    const message = messages.find((message) => message.timestamp === timestamp);
+
+    if (!message) {
+      return new Response("Message with that timestamp does not exist", {
+        status: 400,
+      });
+    }
+
+    await db.zrem(`chat:${chatId}:messages`, message);
+
+    message.isLiked = !message.isLiked;
+
+    pusherServer.trigger(
+      toPusherKey(`chat:${chatId}`),
+      "incoming-like",
+      messages
+    );
 
     await db.zadd(`chat:${chatId}:messages`, {
       score: timestamp,
@@ -68,6 +66,7 @@ export async function POST(req: Request) {
 
     return new Response("OK", { status: 200 });
   } catch (error) {
+    console.log(error);
     if (error instanceof Error) {
       return new Response(error.message, { status: 500 });
     }

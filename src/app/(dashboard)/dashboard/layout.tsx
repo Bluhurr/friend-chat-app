@@ -41,8 +41,6 @@ const Layout = async ({ children }: LayoutProps) => {
     )) as User[]
   ).length;
 
-  console.log(unseenRequestCount);
-
   return (
     <div className="w-full flex h-screen">
       <div className="md:hidden">

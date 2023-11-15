@@ -5,6 +5,7 @@ export const messageValidator = z.object({
   senderId: z.string(),
   text: z.string(),
   timestamp: z.number(),
+  isLiked: z.boolean(),
 });
 
 export const messageArrayValidator = z.array(messageValidator);

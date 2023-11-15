@@ -15,6 +15,7 @@ interface Message {
   senderId: string;
   text: string;
   timestamp: number;
+  isLiked: boolean;
 }
 
 interface FriendRequest {
