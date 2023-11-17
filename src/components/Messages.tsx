@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import Image from "next/image";
 import { FC, useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
-import { Heart, Plus } from "lucide-react";
+import { Heart, Reply } from "lucide-react";
 
 interface MessagesProps {
   initialMessages: Message[];
@@ -16,6 +16,7 @@ interface MessagesProps {
   chatId: string;
   sessionImg: string | null | undefined;
   chatPartner: User;
+  handleReplyMessage: (message: string | null) => void;
 }
 
 const Messages: FC<MessagesProps> = ({
@@ -24,6 +25,7 @@ const Messages: FC<MessagesProps> = ({
   chatId,
   sessionImg,
   chatPartner,
+  handleReplyMessage,
 }) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const scrollDownRef = useRef<HTMLDivElement | null>(null);
@@ -54,6 +56,7 @@ const Messages: FC<MessagesProps> = ({
 
     const messageHandler = (message: Message) => {
       setMessages((prev) => [message, ...prev]);
+      handleReplyMessage(null);
     };
 
     const likeHandler = (updatedMessages: Message[]) => {
@@ -68,7 +71,7 @@ const Messages: FC<MessagesProps> = ({
       pusherClient.unbind("incoming-message", messageHandler);
       pusherClient.unbind("incoming-like", likeHandler);
     };
-  }, [chatId, sessionId]);
+  }, [chatId, sessionId, handleReplyMessage]);
 
   return (
     <div
@@ -95,7 +98,7 @@ const Messages: FC<MessagesProps> = ({
             >
               <div
                 className={cn(
-                  "flex flex-col space-y-2 text-base group max-w-xs mx-2 relative",
+                  "flex flex-col space-y-2 text-base group break-all max-w-md mx-2 relative",
                   {
                     "order-1 items-end": isCurrentUser,
                     "order-2 items-start": !isCurrentUser,
@@ -103,13 +106,32 @@ const Messages: FC<MessagesProps> = ({
                 )}
               >
                 <div
+                  title="Reply to Message"
                   className={cn(
-                    "like-button hidden h-7 w-7 justify-center items-center absolute rounded-full outline outline-2 bg-indigo-100 outline-indigo-500 p-1.5 bottom-[-0.75rem]",
+                    "flex hover:cursor-pointer active:bg-indigo-400 transition-colors duration-150 group-hover:flex like-button hidden h-6 w-6 justify-center items-center absolute rounded-full outline outline-2 bg-indigo-100 outline-indigo-500 p-1.5 bottom-[-0.8rem]",
+                    {
+                      "right-[1.5rem]": !isCurrentUser,
+                      "left-[1.5rem]": isCurrentUser,
+                    }
+                  )}
+                  onClick={() => {
+                    handleReplyMessage(message.text);
+                  }}
+                >
+                  <Reply
+                    className={cn("h-4 w-4 text-indigo-500 fill-transparent")}
+                    fill={"false"}
+                  />
+                </div>
+                <div
+                  title="Like Message"
+                  className={cn(
+                    "like-button hidden h-6 w-6 justify-center items-center absolute rounded-full outline outline-2 bg-indigo-100 outline-indigo-500 p-1.5 bottom-[-0.8rem]",
                     {
                       flex: message.isLiked,
-                      "right-[-0.75rem] hover:cursor-pointer group-hover:flex ":
+                      "right-[-0.5rem] hover:cursor-pointer group-hover:flex ":
                         !isCurrentUser,
-                      "left-[-0.75rem]": isCurrentUser,
+                      "left-[-0.5rem]": isCurrentUser,
                     }
                   )}
                   onClick={() => {
@@ -130,15 +152,23 @@ const Messages: FC<MessagesProps> = ({
                     />
                   )}
                 </div>
+                {message.replyingTo ? (
+                  <span className="translate-y-5 z-[-1] bg-indigo-300 py-2 px-3 rounded-lg text-indigo-500">
+                    {message.replyingTo}
+                  </span>
+                ) : null}
                 <span
-                  className={cn("px-4 py-2 rounded-lg inline-block", {
-                    "bg-indigo-600 text-white": isCurrentUser,
-                    "bg-gray-200 text-gray-900": !isCurrentUser,
-                    "rounded-br-none":
-                      !hasNextMessageFromSameUser && isCurrentUser,
-                    "rounded-bl-none":
-                      !hasNextMessageFromSameUser && !isCurrentUser,
-                  })}
+                  className={cn(
+                    "px-4 py-3 rounded-lg inline-block break-words",
+                    {
+                      "bg-indigo-600 text-white": isCurrentUser,
+                      "bg-gray-200 text-gray-900": !isCurrentUser,
+                      "rounded-br-none":
+                        !hasNextMessageFromSameUser && isCurrentUser,
+                      "rounded-bl-none":
+                        !hasNextMessageFromSameUser && !isCurrentUser,
+                    }
+                  )}
                 >
                   {message.text}{" "}
                   <span className="ml-2 text-sm text-gray-400">

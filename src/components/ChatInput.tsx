@@ -9,9 +9,14 @@ import Button from "./ui/Button";
 interface ChatInputProps {
   chatPartner: User;
   chatId: string;
+  replyingToMessage: string | null;
 }
 
-const ChatInput: FC<ChatInputProps> = ({ chatPartner, chatId }) => {
+const ChatInput: FC<ChatInputProps> = ({
+  chatPartner,
+  chatId,
+  replyingToMessage,
+}) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [input, setInput] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -23,7 +28,11 @@ const ChatInput: FC<ChatInputProps> = ({ chatPartner, chatId }) => {
     setIsLoading(true);
 
     try {
-      await axios.post("/api/message/send", { text: input, chatId });
+      await axios.post("/api/message/send", {
+        text: input,
+        chatId,
+        replyingTo: replyingToMessage,
+      });
       setInput("");
       textareaRef.current?.focus();
       setIsLoading(false);
@@ -37,6 +46,11 @@ const ChatInput: FC<ChatInputProps> = ({ chatPartner, chatId }) => {
   return (
     <div className="border-t border-gray-200 px-4 pt-4 mb-2 sm:mb-0">
       <div className="relative flex-1 overflow-hidden rounded-lg shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-indigo-600">
+        {replyingToMessage ? (
+          <div className="bg-indigo-500 text-indigo-200 text-sm px-3 py-2 font-bold truncate ...">
+            <span>{"Replying to: " + replyingToMessage}</span>
+          </div>
+        ) : null}
         <TextareaAutosize
           ref={textareaRef}
           onKeyDown={(e) => {

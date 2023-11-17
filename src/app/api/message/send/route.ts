@@ -9,7 +9,11 @@ import { getServerSession } from "next-auth";
 
 export async function POST(req: Request) {
   try {
-    const { text, chatId }: { text: string; chatId: string } = await req.json();
+    const {
+      text,
+      chatId,
+      replyingTo,
+    }: { text: string; chatId: string; replyingTo: string } = await req.json();
     const session = await getServerSession(authOptions);
     if (!session) {
       return new Response("Unauthorized", { status: 401 });
@@ -44,6 +48,7 @@ export async function POST(req: Request) {
       text,
       timestamp,
       isLiked: false,
+      replyingTo: replyingTo,
     };
 
     const message = messageValidator.parse(messageData);

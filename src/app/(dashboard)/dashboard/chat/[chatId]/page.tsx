@@ -1,5 +1,4 @@
-import ChatInput from "@/components/ChatInput";
-import Messages from "@/components/Messages";
+import ChatWrapper from "@/components/ChatWrapper";
 import { fetchRedis } from "@/helpers/redis";
 import { authOptions } from "@/lib/auth";
 import { messageArrayValidator } from "@/lib/validations/message";
@@ -92,14 +91,13 @@ const Page = async ({ params }: PageProps) => {
         </div>
       </div>
 
-      <Messages
-        chatPartner={chatPartner}
-        sessionImg={session.user.image}
+      <ChatWrapper
         initialMessages={initialMessages}
         sessionId={session.user.id}
         chatId={chatId}
+        sessionImg={session.user.image}
+        chatPartner={chatPartner}
       />
-      <ChatInput chatPartner={chatPartner} chatId={chatId} />
     </div>
   );
 };
